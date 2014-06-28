@@ -1,0 +1,107 @@
+<html>
+  <head>
+    <title>Oh hellscore</title>
+    <script src="bower_components/angular/angular.js"></script>
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.css" type="text/css" />
+    <script>
+      angular.module("App", [])
+      .controller("MainCtrl", function($scope) {
+
+        $scope.reset = function() {
+          $scope.local = {};
+          $scope.local.errorMessage = "";
+          $scope.local.mode = "init";
+          $scope.local.players = [];
+          $scope.local.pname = "";
+          $scope.local.rounds = [];
+          $scope.local.numGotten = {};
+        }
+        $scope.reset();
+
+        $scope.addPlayer = function() {
+          if($scope.local.pname.length == 0) return;
+          if($scope.local.players.indexOf($scope.local.pname) !== -1) {
+            $scope.local.errorMessage = "Player already added. Duplicate players not allowed";
+          } else {
+            $scope.local.players.push($scope.local.pname);
+          }
+          $scope.local.pname = "";
+        }
+        $scope.startGame = function() {
+          $scope.local.mode = "playing";
+        }
+        $scope.startRound = function() {
+          var around = {bids: [], scores: []};
+          var players = $scope.local.players;
+          for(var i=0;i<players.length;i++) {
+            around.bids[players[i]] = $scope.local.numGotten[players[i]];
+            $scope.local.numGotten[players[i]] = "";
+            around.scores[players[i]] = 0;
+          }
+          $scope.local.rounds.push(around);
+        }
+        $scope.enterScores = function() {
+          var around = $scope.local.rounds.pop();
+          var players = $scope.local.players;
+          for(var i=0;i<players.length;i++) {
+            if(around.bids[players[i]] == $scope.local.numGotten[players[i]]) {
+              around.scores[players[i]] = 10 + (parseInt(around.bids[players[i]]));
+            }
+            $scope.local.numGotten[players[i]] = "";
+          }
+          $scope.local.rounds.push(around);
+        }
+        $scope.totalScore = function(aname) {
+          var score = 0;
+          for(var i=0;i<$scope.local.rounds.length;i++) {
+            score += $scope.local.rounds[i].scores[aname];
+          }
+          return score;
+        }
+      });
+    </script>
+  </head>
+  <body ng-app="App" ng-controller="MainCtrl">
+    <input type="button" value="Reset!" ng-click="reset()"></input>
+
+    <div ng-show="local.mode == 'init'">
+      Current players:<br />
+      <ul>
+        <li ng-repeat="player in local.players">{{player}}</li>
+      </ul><br />
+
+      <label for="pname">Player Name:</label>
+      <input id="pname" type="text" ng-model="local.pname"></input></input>
+      <input type="button" value="Add player" ng-click="addPlayer()"></input>
+
+      <br /><br />
+      <input type="button" value="Start game" ng-click="startGame()"></input>
+    </div>
+    <div ng-show="local.mode == 'playing'">
+      <table border="1px">
+        <tr>
+          <td>Round</td>
+          <td ng-repeat="player in local.players">{{player}}</td>
+        </tr>
+        <tr ng-repeat="round in local.rounds">
+          <td>{{$index + 1}}</td>
+          <td ng-repeat="player in local.players">{{round.scores[player]}}<sup>{{round.bids[player]}}</sup></td>
+        </tr>
+        <tr>
+          <td>{{local.rounds.length + 1}}</td>
+          <td ng-repeat="player in local.players"><input type="number" ng-model="local.numGotten[player]" width="5"></input></td>
+        </tr>
+        <tr>
+          <td>Totals</td>
+          <td ng-repeat="player in local.players">{{totalScore(player)}}</td>
+        </tr>
+        <br />
+        <input type="button" value="Enter bids" ng-click="startRound()"></input><br />
+        <input type="button" value="Enter scores" ng-click="enterScores()"></input>
+      </table>
+    </div>
+    <div ng-show="local.mode == 'end'">
+      End
+    </div>
+  </body>
+</html>
